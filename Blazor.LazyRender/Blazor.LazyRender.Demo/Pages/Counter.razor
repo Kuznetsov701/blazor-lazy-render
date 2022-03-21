@@ -1,0 +1,41 @@
+﻿@page "/counter"
+
+
+<p role="status">Current render count (NonRender): @renderCountNonRender</p>
+<NonRender>
+    @{
+        renderCountNonRender++;
+        StateHasChanged();
+    }
+    <PageTitle>Counter</PageTitle>
+
+    <h1>Counter</h1>
+</NonRender>
+
+<RenderOnChangeValue Value=@(5)>
+    <And Value=@currentCount/>
+</RenderOnChangeValue>
+
+<p role="status">Current render count (RenderOnChange): @renderCountRenderOnChange</p>
+<RenderOnChange currentCount=@currentCount>
+    @{
+        renderCountRenderOnChange++;
+        StateHasChanged();
+    }
+    <p role="status">Current count: @currentCount</p>
+</RenderOnChange>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+<button class="btn btn-primary" @onclick="_ => StateHasChanged()">StateHasChanged</button>
+
+@code {
+    private int currentCount = 0;
+    private int renderCountNonRender = 0;
+    private int renderCountRenderOnChange = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}

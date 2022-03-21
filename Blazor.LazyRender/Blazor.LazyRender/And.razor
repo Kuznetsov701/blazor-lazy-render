@@ -1,0 +1,15 @@
+﻿@code {
+    private bool shoudRender;
+
+    [Parameter]
+    public object Value { get; set; }
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        if (parameters.TryGetValue(nameof(Value), out object value))
+            shoudRender = Value != value;
+
+            Console.WriteLine("and !@!");
+        return base.SetParametersAsync(parameters);
+    }
+}

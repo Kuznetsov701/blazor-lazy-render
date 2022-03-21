@@ -1,0 +1,68 @@
+﻿@using Blazor.LazyRender.Internal
+@typeparam TItem
+
+<CascadingValue Value="this" IsFixed="true">
+    @for (int i = 0; i < CountRenderedChunks; i++)
+    {
+        int current = i;
+        <RenderOnChange chunk=@Chunks[current] renderId=@renderId>
+            <CollectionChunkLazyRender Items=@Chunks[current] />
+        </RenderOnChange>
+    }
+</CascadingValue>
+
+@code {
+    private Guid renderId = Guid.NewGuid();
+    private int CountRenderedChunks { get; set; }
+    private Context<TItem>[][] Chunks { get; set; }
+
+    [Parameter] 
+    public RenderFragment<Context<TItem>> ChildContent { get; set; }
+
+    [Parameter] 
+    public IEnumerable<TItem> Items { get; set; }
+
+    [Parameter] 
+    public int ChunkSize { get; set; } = 20;
+
+    internal void RenderNextChunk()
+    {
+        if (CountRenderedChunks < Chunks.Length)
+        {
+            CountRenderedChunks++;
+            StateHasChanged();
+        }
+    }
+
+    public void Rerender()
+    {
+        if (CountRenderedChunks > 1)
+            CountRenderedChunks = 1;
+        renderId = Guid.NewGuid();
+        StateHasChanged();
+    }
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        await base.SetParametersAsync(parameters);
+        if (parameters.ToDictionary().ContainsKey(nameof(Items)))
+        {
+            if (Items?.Any() == true)
+            {
+                Chunks = Items.Select(x => new Context<TItem> { Item = x }).Chunk(ChunkSize).ToArray();
+                CountRenderedChunks = 1;
+            }
+            else
+            {
+                Chunks = null;
+                CountRenderedChunks = 0;
+            }
+        }
+    }
+
+    public class Context<T>
+    {
+        public T Item { get; init; }
+        public ElementReference ElementReference { get; set; }
+    }
+}

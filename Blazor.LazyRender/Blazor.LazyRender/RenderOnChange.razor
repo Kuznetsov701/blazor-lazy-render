@@ -1,0 +1,23 @@
+﻿@ChildContent
+
+@code {
+    private bool shouldRender = false;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> Parameters { get; set; }
+
+    protected override bool ShouldRender() => shouldRender ? !(shouldRender = false) : shouldRender;
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        var oldParameters = Parameters;
+        
+        await base.SetParametersAsync(parameters);
+        
+        shouldRender = Parameters.Any(x => oldParameters?[x.Key]?.Equals(x.Value) == false);
+        StateHasChanged();
+    }
+}

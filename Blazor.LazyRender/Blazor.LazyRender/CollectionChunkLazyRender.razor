@@ -1,0 +1,45 @@
+﻿@namespace Blazor.LazyRender.Internal
+@using Microsoft.JSInterop
+@typeparam TItem
+@inject IJSRuntime js
+@implements IAsyncDisposable
+
+@foreach (var item in Items)
+{
+    @Owner.ChildContent(item)
+}
+
+@code {
+    private IJSObjectReference module;
+    private IJSObjectReference observer;
+    private DotNetObjectReference<CollectionChunkLazyRender<TItem>> objectReference;
+
+    [CascadingParameter] 
+    public CollectionLazyRender<TItem> Owner { get; set; }
+
+    [Parameter] 
+    public IEnumerable<CollectionLazyRender<TItem>.Context<TItem>> Items { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            module = await js.InvokeAsync<IJSObjectReference>("import", $"/_content/Blazor.LazyRender/lazyRender.js");
+            objectReference = DotNetObjectReference.Create(this);
+            observer = await module.InvokeAsync<IJSObjectReference>("observe", Items.Last().ElementReference, objectReference);
+        }
+    }
+
+    [JSInvokable]
+    public void Intersected() =>
+        Owner.RenderNextChunk();
+
+    public async ValueTask DisposeAsync()
+    {
+        await module.InvokeVoidAsync("unobserve", observer);
+        _ = observer.DisposeAsync();
+        _ = module.DisposeAsync();
+        objectReference.Dispose();
+    }
+}
